@@ -49,7 +49,7 @@ function checkWin(gameBoard, player) {
     let gameWon = null;
     for (let [index, win] of winningCombinations.entries()) {
         if (win.every(elem => plays.indexOf(elem) > -1)) { // determine if the player has played in a winning combo
-            gameWon = { index: index, player: player };
+            gameWon = {index: index, player: player};
             break;
         }
     }
@@ -66,8 +66,8 @@ function gameOver(gameWon) {
     declareWinner(gameWon.player === humanPlayer ? 'You win!' : 'You lose');
 }
 
-function emptySquares() {
-    return originalBoard.filter(s => typeof s == 'number');
+function emptySquares(board) {
+    return board.filter(s => typeof s == 'number');
 }
 
 function bestSpot() {
@@ -75,7 +75,7 @@ function bestSpot() {
 }
 
 function checkTie() {
-    if (emptySquares().length == 0) { //every squares are filled up and nobody has won
+    if (emptySquares(originalBoard).length == 0) { //every squares are filled up and nobody has won
         for (let i = 0; i < cells.length; ++i) {
             cells[i].style.backgroundColor = 'green';
             cells[i].removeEventListener('click', turnClick, false);
@@ -91,45 +91,45 @@ function declareWinner(who) {
     document.querySelector(".endgame .text").innerText = who;
 }
 
-function minimax(newBoard, depth, alpha, beta, player) {
-    let availSpots = emptySquares();
-
-    if (checkWin(newBoard, humanPlayer)) {
-        return { score: -10 };
-    } else if (checkWin(newBoard, aiPlayer)) {
-        return { score: 10 };
+function minimax(board, depth, alpha, beta, player) {
+    let availSpots = emptySquares(board);
+    if (checkWin(board, humanPlayer)) {
+        return {score: -10 + depth};
+    } else if (checkWin(board, aiPlayer)) {
+        return {score: 10 - depth};
     } else if (availSpots.length === 0) {
-        return { score: 0 };
+        return {score: 0};
     }
 
-    let move = {};
-    let bestVal = (player == humanPlayer) ? -Infinity : Infinity
+    let otherPlayer = player == aiPlayer ? humanPlayer : aiPlayer;
+    let bestVal = player == aiPlayer ? -Infinity : Infinity;
+    let bestIndex = -1
 
     for (let i = 0; i < availSpots.length; i++) {
-        move.index = newBoard[availSpots[i]];
+        let newBoard = JSON.parse(JSON.stringify(board))
         newBoard[availSpots[i]] = player;
+        score = minimax(newBoard, depth + 1, alpha, beta, otherPlayer).score
 
         if (player == aiPlayer) {
-            let result = minimax(newBoard, depth + 1, alpha, beta, humanPlayer)
-            move.score = result.score;
-            bestVal = Math.max(bestVal, result.score)
+            if (bestVal <= score) {
+                bestVal = score
+                bestIndex = availSpots[i]
+            }
             alpha = Math.max(alpha, bestVal)
-            if (beta <= alpha) {
-                move.score = bestVal;
+            if (beta < alpha) {
                 break
             }
         } else {
-            let result = minimax(newBoard, depth + 1, alpha, beta, aiPlayer)
-            bestVal = Math.max(bestVal, result.score)
-            alpha = Math.max(alpha, bestVal)
-            if (beta <= alpha) {
-                move.score = bestVal;
+            if (bestVal >= score) {
+                bestVal = score
+                bestIndex = availSpots[i]
+            }
+            beta = Math.min(beta, bestVal)
+            if (beta < alpha) {
                 break
             }
         }
-
-        newBoard[availSpots[i]] = move.index;
     }
 
-    return move;
+    return {score: bestVal, index: bestIndex};
 }
