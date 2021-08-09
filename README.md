@@ -1,2 +1,2 @@
 # tic-tac-toe
-Unbeatable AI
+Unbeatable AI. Minimax with alpha–beta pruning
